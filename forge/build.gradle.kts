@@ -140,7 +140,7 @@ tasks.register<Copy>("buildAndCollect") {
 
 publishMods {
     file.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
-    changelog = "No changelog provided."
+    changelog = providers.fileContents(common.layout.projectDirectory.file("CHANGELOG.md")).asText
     modLoaders.add("forge")
     type = STABLE
     displayName = "${common.mod.name} Forge ${project.version}"
@@ -149,6 +149,7 @@ publishMods {
         accessToken = providers.environmentVariable("MODRINTH_API_KEY")
         projectId = "oQborhDc"
         minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
+        projectDescription = providers.fileContents(common.layout.projectDirectory.file("README.md")).asText
     }
 
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent

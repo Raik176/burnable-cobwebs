@@ -1,0 +1,1 @@
+Now supports most torches and flint and steels.
