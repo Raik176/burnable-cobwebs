@@ -14,12 +14,11 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.example.template.fabric.TemplateModFabric"
+      "org.rhm.${id}.fabric.BurnableCobwebsFabric"
     ]
   },
   "mixins": [
-    "template-common.mixins.json",
-    "template-fabric.mixins.json"
+    "${id}-common.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.15",

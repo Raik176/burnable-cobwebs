@@ -4,6 +4,7 @@ plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
     id("com.github.johnrengelman.shadow")
+    id("me.modmuss50.mod-publish-plugin") version "0.7.4"
 }
 
 val loader = prop("loom.platform")!!
@@ -44,12 +45,7 @@ repositories {
 
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft")
-    mappings(loom.layered {
-        mappings("net.fabricmc:yarn:$minecraft+build.${common.mod.dep("yarn_build")}:v2")
-        common.mod.dep("neoforge_patch").takeUnless { it.startsWith('[') }?.let {
-            mappings("dev.architectury:yarn-mappings-patch-neoforge:$it")
-        }
-    })
+    mappings(loom.officialMojangMappings())
     "neoForge"("net.neoforged:neoforge:${common.mod.dep("neoforge_loader")}")
     "io.github.llamalad7:mixinextras-neoforge:${mod.dep("mixin_extras")}".let {
         implementation(it)
@@ -68,7 +64,7 @@ loom {
     }
 
     runConfigs.all {
-        isIdeConfigGenerated = true
+        isIdeConfigGenerated = false
         runDir = "../../../run"
         vmArgs("-Dmixin.debug.export=true")
     }
@@ -99,12 +95,20 @@ tasks.shadowJar {
     exclude("fabric.mod.json", "architectury.common.json")
 }
 
+
+fun convertMinecraftTargets(): String {
+    return "[" + common.mod.prop("mc_targets").split(" ").joinToString(", ") + "]"
+}
+
 tasks.processResources {
     properties(listOf("META-INF/neoforge.mods.toml", "pack.mcmeta"),
         "id" to mod.id,
         "name" to mod.name,
         "version" to mod.version,
-        "minecraft" to common.mod.prop("mc_dep_forgelike")
+        "description" to mod.prop("description"),
+        "author" to mod.prop("author"),
+        "license" to mod.prop("license"),
+        "minecraft" to convertMinecraftTargets()
     )
 }
 
@@ -119,4 +123,20 @@ tasks.register<Copy>("buildAndCollect") {
     from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
     into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
     dependsOn("build")
+}
+
+publishMods {
+    file.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+    changelog = "No changelog provided."
+    modLoaders.add("neoforge")
+    type = STABLE
+    displayName = "${common.mod.name} Neoforge ${project.version}"
+
+    modrinth {
+        accessToken = providers.environmentVariable("MODRINTH_API_KEY")
+        projectId = "oQborhDc"
+        minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
+    }
+
+    dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
 }

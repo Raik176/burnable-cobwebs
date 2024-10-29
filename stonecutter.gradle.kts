@@ -13,7 +13,11 @@ stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chisele
     ofTask("buildAndCollect")
 }
 
-// Builds loader-specific versions into `build/libs/{mod.version}/{loader}`
+stonecutter registerChiseled tasks.register("chiseledPublishMods", stonecutter.chiseled) {
+    group = "project"
+    ofTask("publishMods")
+}
+
 for (it in stonecutter.tree.branches) {
     if (it.id.isEmpty()) continue
     val loader = it.id.upperCaseFirst()
@@ -24,7 +28,6 @@ for (it in stonecutter.tree.branches) {
     }
 }
 
-// Runs active versions for each loader
 for (it in stonecutter.tree.nodes) {
     if (it.metadata != stonecutter.current || it.branch.id.isEmpty()) continue
     val types = listOf("Client", "Server")

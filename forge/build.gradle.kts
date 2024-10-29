@@ -1,13 +1,19 @@
 @file:Suppress("UnstableApiUsage")
 
+import net.fabricmc.loom.task.RemapJarTask
+
+
 plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
     id("com.github.johnrengelman.shadow")
+    id("me.modmuss50.mod-publish-plugin") version "0.7.4"
 }
 
 val loader = prop("loom.platform")!!
-val minecraft: String = stonecutter.current.version
+var minecraft: String = stonecutter.current.version
+if (minecraft == "1.21.2") // forge only supports 1.21.3 and neoforge only supports 1.21.2
+    minecraft = "1.21.3"
 val common: Project = requireNotNull(stonecutter.node.sibling("")) {
     "No common project for $project"
 }
@@ -40,11 +46,15 @@ configurations {
 
 repositories {
     maven("https://maven.minecraftforge.net")
+    maven {
+        name = "Jared's maven"
+        url = uri("https://maven.blamejared.com/")
+    }
 }
 
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft")
-    mappings("net.fabricmc:yarn:$minecraft+build.${common.mod.dep("yarn_build")}:v2")
+    mappings(loom.officialMojangMappings())
     "forge"("net.minecraftforge:forge:$minecraft-${common.mod.dep("forge_loader")}")
     "io.github.llamalad7:mixinextras-forge:${mod.dep("mixin_extras")}".let {
         implementation(it)
@@ -64,12 +74,11 @@ loom {
 
     forge.convertAccessWideners = true
     forge.mixinConfigs(
-        "template-common.mixins.json",
-        "template-forge.mixins.json",
+        "burnable_cobwebs-common.mixins.json"
     )
 
     runConfigs.all {
-        isIdeConfigGenerated = true
+        isIdeConfigGenerated = false
         runDir = "../../../run"
         vmArgs("-Dmixin.debug.export=true")
     }
@@ -100,12 +109,19 @@ tasks.shadowJar {
     exclude("fabric.mod.json", "architectury.common.json")
 }
 
+fun convertMinecraftTargets(): String {
+    return "[" + common.mod.prop("mc_targets").split(" ").joinToString(", ") + "]"
+}
+
 tasks.processResources {
     properties(listOf("META-INF/mods.toml", "pack.mcmeta"),
         "id" to mod.id,
         "name" to mod.name,
         "version" to mod.version,
-        "minecraft" to common.mod.prop("mc_dep_forgelike")
+        "description" to mod.prop("description"),
+        "author" to mod.prop("author"),
+        "license" to mod.prop("license"),
+        "minecraft" to convertMinecraftTargets()
     )
 }
 
@@ -120,4 +136,20 @@ tasks.register<Copy>("buildAndCollect") {
     from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
     into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
     dependsOn("build")
+}
+
+publishMods {
+    file.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+    changelog = "No changelog provided."
+    modLoaders.add("forge")
+    type = STABLE
+    displayName = "${common.mod.name} Forge ${project.version}"
+
+    modrinth {
+        accessToken = providers.environmentVariable("MODRINTH_API_KEY")
+        projectId = "oQborhDc"
+        minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
+    }
+
+    dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
 }

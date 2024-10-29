@@ -1,0 +1,11 @@
+{
+  "burn": {
+    "subtitle": "sound.burnable_cobwebs.burn",
+    "sounds": [
+      {
+        "name": "burnable_cobwebs:burn",
+        "stream": true
+      }
+    ]
+  }
+}

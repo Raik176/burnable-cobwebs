@@ -12,7 +12,4 @@ logoFile = "assets/${id}/icon.png"
 logoBlur = false
 
 [[mixins]]
-config = "template-common.mixins.json"
-
-[[mixins]]
-config = "template-forge.mixins.json"
+config = "${id}-common.mixins.json"
