@@ -3,13 +3,13 @@
   "id": "${id}",
   "version": "${version}",
   "name": "${name}",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "${description}",
   "authors": [
-    "Me!"
+    "${description}"
   ],
   "contact": {
   },
-  "license": "CC0-1.0",
+  "license": "${license}",
   "icon": "assets/${id}/icon.png",
   "environment": "*",
   "entrypoints": {

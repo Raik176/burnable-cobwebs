@@ -1,5 +1,8 @@
 @file:Suppress("UnstableApiUsage")
 
+import net.fabricmc.loom.task.RemapJarTask
+
+
 plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
@@ -126,7 +129,7 @@ tasks.register<Copy>("buildAndCollect") {
 }
 
 publishMods {
-    file.set(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+    file.set(tasks.named<RemapJarTask>("remapJar").flatMap { it.archiveFile })
     changelog = providers.fileContents(common.layout.projectDirectory.file("../../CHANGELOG.md")).asText.get()
     modLoaders.add("neoforge")
     type = STABLE
@@ -137,6 +140,11 @@ publishMods {
         projectId = "oQborhDc"
         minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
         projectDescription = providers.fileContents(common.layout.projectDirectory.file("../../README.md")).asText.get()
+    }
+    github {
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+
+        parent(common.tasks.named("publishGithub"))
     }
 
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent

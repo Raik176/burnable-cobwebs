@@ -1,8 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-import groovy.json.JsonSlurper
 import net.fabricmc.loom.task.RemapJarTask
-import java.net.URL
 
 
 plugins {
@@ -133,6 +131,11 @@ publishMods {
         projectId = "oQborhDc"
         minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
         projectDescription = providers.fileContents(common.layout.projectDirectory.file("../../README.md")).asText.get()
+    }
+    github {
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+
+        parent(common.tasks.named("publishGithub"))
     }
 
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent

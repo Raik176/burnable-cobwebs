@@ -7,15 +7,16 @@ plugins {
 stonecutter active "1.20.1" /* [SC] DO NOT EDIT */
 stonecutter.automaticPlatformConstants = true
 
-// Builds every version into `build/libs/{mod.version}/{loader}`
 stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
     group = "project"
     ofTask("buildAndCollect")
 }
 
-stonecutter registerChiseled tasks.register("chiseledPublishMods", stonecutter.chiseled) {
-    group = "project"
-    ofTask("publishMods")
+for (it in listOf("Mods", "Github", "Modrinth")) {
+    stonecutter registerChiseled tasks.register("chiseledPublish$it", stonecutter.chiseled) {
+        group = "project"
+        ofTask("publish$it")
+    }
 }
 
 for (it in stonecutter.tree.branches) {

@@ -1,6 +1,8 @@
+//common
 plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
+    id("me.modmuss50.mod-publish-plugin") version "0.7.4"
 }
 
 val minecraft = stonecutter.current.version
@@ -47,4 +49,21 @@ java {
 tasks.build {
     group = "versioned"
     description = "Must run through 'chiseledBuild'"
+}
+
+publishMods {
+    changelog = providers.fileContents(layout.projectDirectory.file("../../CHANGELOG.md")).asText.get()
+    type = STABLE
+    displayName = "${mod.version} for $minecraft"
+
+    github {
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+        repository = "Raik176/burnable-cobwebs"
+        commitish = "master"
+        tagName = "v${mod.version}"
+
+        allowEmptyFiles = true
+    }
+
+    dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
 }

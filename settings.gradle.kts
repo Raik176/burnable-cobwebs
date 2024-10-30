@@ -18,7 +18,6 @@ stonecutter {
     centralScript = "build.gradle.kts"
     kotlinController = true
     create(rootProject) {
-        // Root `src/` functions as the 'common' project
         versions("1.20.1", "1.20.6", "1.21.1")
         branch("fabric")
         branch("forge")

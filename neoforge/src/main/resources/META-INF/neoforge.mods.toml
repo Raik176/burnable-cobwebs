@@ -1,13 +1,13 @@
 modLoader = "javafml"
 loaderVersion = "*"
-license = "CC0-1.0"
+license = "${license}"
 
 [[mods]]
 modId = "${id}"
 version = "${version}"
 displayName = "${name}"
-authors = "Me"
-description = "This is an example description! Tell everyone what your mod is about!"
+authors = "${author}"
+description = "${description}"
 logoFile = "assets/${id}/icon.png"
 logoBlur = false
 
