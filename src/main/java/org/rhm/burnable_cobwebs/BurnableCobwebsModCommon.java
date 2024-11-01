@@ -7,19 +7,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.TorchBlock;
 
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class BurnableCobwebsModCommon {
 	public static final String MOD_ID = "burnable_cobwebs";
-	public static BiFunction<String, Function<Item.Properties, Item>, Item> itemRegisterFunc;
 	// if tags/instances don't pick up i can use this supplier to manually add them
 	public static Supplier<List<Item>> customLighters;
 
-    public static void init() {
+	public static void init() {
 		ItemRegistry.init();
-
 	}
 
 	public static boolean isLighter(ItemStack stack) {

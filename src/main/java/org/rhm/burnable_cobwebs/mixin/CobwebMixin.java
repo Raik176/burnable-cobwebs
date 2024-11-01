@@ -21,13 +21,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
 
 //? if <=1.20.1 {
-import net.minecraft.world.InteractionResult;
-//?} else {
-/*import net.minecraft.world.ItemInteractionResult;
+/*import net.minecraft.world.InteractionResult;
+*///?} else {
+import net.minecraft.world.ItemInteractionResult;
 
 import java.util.List;
 import java.util.Optional;
-*///?}
+//?}
 
 @Mixin(WebBlock.class)
 public abstract class CobwebMixin extends Block {
@@ -36,23 +36,23 @@ public abstract class CobwebMixin extends Block {
 	}
 
 	@Override
-	//? if <=1.20.1 {
-	@SuppressWarnings("deprecation")
+			//? if <=1.20.1 {
+	/*@SuppressWarnings("deprecation")
 	public @NotNull InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-	//?} elif <1.21 {
-	/*protected ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-	*///?} else
-	/*protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {*/
+		*///?} elif <1.21 {
+		protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+		 //?} else
+		/*protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {*/
 		ItemStack itemStack;
 		//? if <=1.20.1 {
-		itemStack = player.getItemInHand(hand);
-		//?} else
-        /*itemStack = stack;*/
+		/*itemStack = player.getItemInHand(hand);
+		*///?} else
+		itemStack = stack;
 		//? if <=1.20.1 {
-		InteractionResult result = super.use(state, world, pos, player, hand, hit);
-		//?} elif <1.21 {
-		/*ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, interactionHand, blockHitResult);
-        *///?} else
+		/*InteractionResult result = super.use(state, world, pos, player, hand, hit);
+		*///?} elif <1.21 {
+		ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, interactionHand, blockHitResult);
+		 //?} else
 		/*ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, hand, blockHitResult);*/
 		if (BurnableCobwebsModCommon.isLighter(itemStack)) {
 			world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
@@ -66,7 +66,7 @@ public abstract class CobwebMixin extends Block {
 					world.random.nextFloat() * 0.25F + 0.75F
 			);
 
-            for (int i = 0; i < world.getRandom().nextInt(10, 25); i++) {
+			for (int i = 0; i < world.getRandom().nextInt(10, 25); i++) {
 				world.addParticle(
 						ParticleTypes.SMOKE,
 						pos.getX() + 0.5 + world.getRandom().nextFloat(),
@@ -80,22 +80,22 @@ public abstract class CobwebMixin extends Block {
 				ServerLevel serverWorld = (ServerLevel) world;
 				if (itemStack.isDamageableItem())
 					//? if <=1.20.1 {
-					itemStack.hurt(
+					/*itemStack.hurt(
 							1,
 							serverWorld.getRandom(),
 							(ServerPlayer) player
 					);
-					//?} else {
-					/*itemStack.hurtAndBreak(
+				*///?} else {
+					itemStack.hurtAndBreak(
 							1,
 							//? if >1.21 {
-							/^serverWorld,
-							^///?} elif >1.20.1
+							/*serverWorld,
+							*///?} elif >1.20.1
 							serverWorld.getRandom(),
 							(ServerPlayer) player,
-							(/^? if >=1.21 {^//^plr^//^?}^/) -> {}
+							(/*? if >=1.21 {*//*plr*//*?}*/) -> {}
 					);
-					*///?}
+					//?}
 
 
 				/*
@@ -106,9 +106,9 @@ public abstract class CobwebMixin extends Block {
 			}
 
 			//? if <=1.20.1 {
-			result = InteractionResult.SUCCESS;
-			 //?} else
-			/*result = ItemInteractionResult.SUCCESS;*/
+			/*result = InteractionResult.SUCCESS;
+			*///?} else
+			result = ItemInteractionResult.SUCCESS;
 		}
 
 		return result;

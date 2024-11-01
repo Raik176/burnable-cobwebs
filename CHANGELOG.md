@@ -1,1 +1,1 @@
-Now supports most torches and flint and steels.
+Add support for more versions.
