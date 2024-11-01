@@ -1,6 +1,5 @@
 package org.rhm.burnable_cobwebs.mixin;
 
-import net.minecraft.world.InteractionResult;
 import org.jetbrains.annotations.NotNull;
 import org.rhm.burnable_cobwebs.BurnableCobwebsModCommon;
 import net.minecraft.core.BlockPos;
@@ -10,10 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
