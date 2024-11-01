@@ -141,6 +141,11 @@ publishMods {
         minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
         projectDescription = providers.fileContents(common.layout.projectDirectory.file("../../README.md")).asText.get()
     }
+    curseforge {
+        accessToken = providers.environmentVariable("CF_API_KEY")
+        projectId = "1132367"
+        minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
+    }
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
 

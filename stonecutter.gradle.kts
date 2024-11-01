@@ -8,17 +8,17 @@ stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 stonecutter.automaticPlatformConstants = true
 
 stonecutter registerChiseled tasks.register("chiseledClean", stonecutter.chiseled) {
-    group = "project"
+    group = "build"
     ofTask("clean")
 }
 stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
-    group = "project"
+    group = "build"
     ofTask("buildAndCollect")
 }
 
-for (it in listOf("Mods", "Github", "Modrinth")) {
+for (it in listOf("Mods", "Github", "Modrinth", "Curseforge")) {
     stonecutter registerChiseled tasks.register("chiseledPublish$it", stonecutter.chiseled) {
-        group = "project"
+        group = "publishing"
         ofTask("publish$it")
     }
 }
@@ -27,7 +27,7 @@ for (it in stonecutter.tree.branches) {
     if (it.id.isEmpty()) continue
     val loader = it.id.upperCaseFirst()
     stonecutter registerChiseled tasks.register("chiseledBuild$loader", stonecutter.chiseled) {
-        group = "project"
+        group = "build"
         versions { branch, _ -> branch == it.id }
         ofTask("buildAndCollect")
     }
