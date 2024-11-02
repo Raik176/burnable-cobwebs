@@ -20,13 +20,10 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import org.spongepowered.asm.mixin.Mixin;
 
-//? if <=1.20.1 {
+//? if <=1.20.1 || >1.21.1 {
 /*import net.minecraft.world.InteractionResult;
 *///?} else {
 import net.minecraft.world.ItemInteractionResult;
-
-import java.util.List;
-import java.util.Optional;
 //?}
 
 @Mixin(WebBlock.class)
@@ -36,13 +33,15 @@ public abstract class CobwebMixin extends Block {
 	}
 
 	@Override
-			//? if <=1.20.1 {
+	//? if <=1.20.1 {
 	/*@SuppressWarnings("deprecation")
 	public @NotNull InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-		*///?} elif <1.21 {
-		protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-		 //?} else
-		/*protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {*/
+	*///?} elif <1.21 {
+	/*protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+	*///?} elif >1.21.1 {
+	/*protected @NotNull InteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+	*///?} else
+	protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
 		ItemStack itemStack;
 		//? if <=1.20.1 {
 		/*itemStack = player.getItemInHand(hand);
@@ -51,9 +50,11 @@ public abstract class CobwebMixin extends Block {
 		//? if <=1.20.1 {
 		/*InteractionResult result = super.use(state, world, pos, player, hand, hit);
 		*///?} elif <1.21 {
-		ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, interactionHand, blockHitResult);
-		 //?} else
-		/*ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, hand, blockHitResult);*/
+		/*ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, interactionHand, blockHitResult);
+		 *///?} elif >1.21.1 {
+		/*InteractionResult result = super.useItemOn(stack, blockState, world, pos, player, interactionHand, blockHitResult);
+		*///?} else
+		ItemInteractionResult result = super.useItemOn(stack, blockState, world, pos, player, hand, blockHitResult);
 		if (BurnableCobwebsModCommon.isLighter(itemStack)) {
 			world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
 
@@ -78,34 +79,29 @@ public abstract class CobwebMixin extends Block {
 
 			if (!world.isClientSide) {
 				ServerLevel serverWorld = (ServerLevel) world;
-				if (itemStack.isDamageableItem())
+				if (itemStack.isDamageableItem()) {
 					//? if <=1.20.1 {
 					/*itemStack.hurt(
 							1,
 							serverWorld.getRandom(),
 							(ServerPlayer) player
 					);
-				*///?} else {
+					*///?} else {
 					itemStack.hurtAndBreak(
 							1,
 							//? if >1.21 {
-							/*serverWorld,
-							*///?} elif >1.20.1
-							serverWorld.getRandom(),
+							serverWorld,
+							//?} elif >1.20.1
+							/*serverWorld.getRandom(),*/
 							(ServerPlayer) player,
-							(/*? if >=1.21 {*//*plr*//*?}*/) -> {}
+							(/*? if >=1.21 {*/plr/*?}*/) -> {
+							}
 					);
 					//?}
-
-
-				/*
-				for (int i=0; i<serverWorld.getRandom().nextInt(3); i++) {
-					world.addFreshEntity(new ItemEntity(serverWorld, pos.getX(), pos.getY(), pos.getZ(), Items.FLINT_AND_STEEL.getDefaultInstance()));
 				}
-				 */
 			}
 
-			//? if <=1.20.1 {
+			//? if <=1.20.1 || >1.21.1 {
 			/*result = InteractionResult.SUCCESS;
 			*///?} else
 			result = ItemInteractionResult.SUCCESS;
