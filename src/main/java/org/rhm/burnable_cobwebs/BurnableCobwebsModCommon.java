@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.TorchBlock;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public class BurnableCobwebsModCommon {
@@ -22,9 +23,8 @@ public class BurnableCobwebsModCommon {
 		Item item = stack.getItem();
 		if (item instanceof BlockItem bi)
 			return bi.getBlock() instanceof TorchBlock;
-		else if (item instanceof FlintAndSteelItem)
+		if (item instanceof FlintAndSteelItem)
 			return true;
-		else
-			return customLighters.get().contains(item);
+		return customLighters != null && Objects.requireNonNullElse(customLighters.get(), List.of()).contains(item);
 	}
 }
