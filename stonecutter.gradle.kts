@@ -4,7 +4,7 @@ plugins {
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 }
-stonecutter active "1.21.1" /* [SC] DO NOT EDIT */
+stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 stonecutter.automaticPlatformConstants = true
 
 stonecutter registerChiseled tasks.register("chiseledClean", stonecutter.chiseled) {
@@ -14,6 +14,12 @@ stonecutter registerChiseled tasks.register("chiseledClean", stonecutter.chisele
 stonecutter registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
     group = "build"
     ofTask("buildAndCollect")
+}
+
+stonecutter registerChiseled tasks.register("chiseledTest", stonecutter.chiseled) {
+    group = "verification"
+    versions { branch, _ -> branch == "fabric" }
+    ofTask("test")
 }
 
 for (it in listOf("Mods", "Github", "Modrinth", "Curseforge")) {
