@@ -10,9 +10,3 @@ authors = "${author}"
 description = "${description}"
 logoFile = "assets/${id}/icon.png"
 logoBlur = false
-
-[[mixins]]
-config = "template-common.mixins.json"
-
-[[mixins]]
-config = "template-neoforge.mixins.json"

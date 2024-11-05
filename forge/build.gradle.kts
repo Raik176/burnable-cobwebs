@@ -73,9 +73,6 @@ loom {
     }
 
     forge.convertAccessWideners = true
-    forge.mixinConfigs(
-        "burnable_cobwebs-common.mixins.json"
-    )
 
     runConfigs.all {
         isIdeConfigGenerated = false

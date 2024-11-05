@@ -1,1 +1,1 @@
-Fix game crash because of slight oversight
+Fix mixin crash by removing mixins

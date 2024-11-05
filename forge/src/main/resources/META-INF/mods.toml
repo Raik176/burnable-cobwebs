@@ -10,6 +10,3 @@ authors = "${author}"
 description = "${description}"
 logoFile = "assets/${id}/icon.png"
 logoBlur = false
-
-[[mixins]]
-config = "${id}-common.mixins.json"

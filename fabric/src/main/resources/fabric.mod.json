@@ -17,9 +17,6 @@
       "org.rhm.${id}.fabric.BurnableCobwebsFabric"
     ]
   },
-  "mixins": [
-    "${id}-common.mixins.json"
-  ],
   "depends": {
     "fabricloader": ">=0.15",
     "minecraft": "${minecraft}"
