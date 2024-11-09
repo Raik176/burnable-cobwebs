@@ -1,4 +1,4 @@
-<div style="display: flex; justify-content: center; gap: 10px;">
+<div align="center">
     <a href="https://modrinth.com/mod/burnable-cobwebs">
         <img alt="modrinth" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy-minimal/available/modrinth_vector.svg">
     </a>
