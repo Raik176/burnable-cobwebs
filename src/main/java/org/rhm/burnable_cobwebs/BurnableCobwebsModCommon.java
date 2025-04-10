@@ -69,22 +69,22 @@ public class BurnableCobwebsModCommon {
 				ServerLevel serverWorld = (ServerLevel) world;
 				if (itemStack.isDamageableItem()) {
 					//? if <=1.20.1 {
-					/*itemStack.hurt(
+					itemStack.hurt(
 							1,
 							serverWorld.getRandom(),
 							(ServerPlayer) player
 					);
-					*///?} else {
-					itemStack.hurtAndBreak(
+					//?} else {
+					/*itemStack.hurtAndBreak(
 							1,
 							//? if >1.21 {
-							/*serverWorld,
-							 *///?} elif >1.20.1
-							serverWorld.getRandom(),
+							serverWorld,
+							 //?} elif >1.20.1
+							/^serverWorld.getRandom(),^/
 							(ServerPlayer) player,
-							(/*? if >=1.21 {*//*plr*//*?}*/) -> {}
+							(/^? if >=1.21 {^/plr/^?}^/) -> {}
 					);
-					//?}
+					*///?}
 				}
 			}
 			return InteractionResult.SUCCESS;
