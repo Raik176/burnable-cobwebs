@@ -16,8 +16,8 @@ val common: Project = requireNotNull(stonecutter.node.sibling("")) {
     "No common project for $project"
 }.project
 
-version = "${mod.version}+$minecraft"
 group = "${mod.group}.$loader"
+version = "${mod.version}+$minecraft"
 base {
     archivesName.set("${mod.id}-$loader")
 }
