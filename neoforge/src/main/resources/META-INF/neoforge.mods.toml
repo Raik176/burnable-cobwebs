@@ -1,6 +1,7 @@
 modLoader = "javafml"
 loaderVersion = "*"
 license = "${license}"
+issueTrackerURL = "https://github.com/Raik176/burnable-cobwebs/issues"
 
 [[mods]]
 modId = "${id}"

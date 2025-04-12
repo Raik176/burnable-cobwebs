@@ -8,6 +8,9 @@
     "${description}"
   ],
   "contact": {
+    "homepage": "https://rhm176.de",
+    "issues": "https://github.com/Raik176/burnable-cobwebs/issues",
+    "sources": "https://github.com/Raik176/burnable-cobwebs"
   },
   "license": "${license}",
   "icon": "assets/${id}/icon.png",

@@ -18,6 +18,12 @@ architectury.common(stonecutter.tree.branches.mapNotNull {
     else it.project.prop("loom.platform")
 })
 
+tasks.jar {
+    from(rootProject.file("LICENSE")) {
+        rename { "${mod.id}_LICENSE.md" }
+    }
+}
+
 dependencies {
     minecraft("com.mojang:minecraft:$minecraft")
     mappings(loom.officialMojangMappings())
