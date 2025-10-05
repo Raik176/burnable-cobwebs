@@ -1,3 +1,7 @@
+import com.google.gson.JsonParser
+import java.net.HttpURLConnection
+import java.net.URL
+
 //common
 plugins {
     id("dev.architectury.loom")
@@ -57,6 +61,28 @@ tasks.build {
     description = "Must run through 'chiseledBuild'"
 }
 
+fun fetchModrinthIcon(projectId: String): String? {
+    val url = URL("https://api.modrinth.com/v2/project/$projectId")
+    return try {
+        (url.openConnection() as HttpURLConnection).run {
+            requestMethod = "GET"
+            connectTimeout = 5000
+            readTimeout = 5000
+
+            if (responseCode == 200) {
+                inputStream.bufferedReader().use { reader ->
+                    val jsonElement = JsonParser.parseReader(reader)
+                    jsonElement.asJsonObject.get("icon_url")?.asString
+                }
+            } else {
+                null
+            }
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
 publishMods {
     changelog = providers.fileContents(layout.projectDirectory.file("../../CHANGELOG.md")).asText.get()
     type = STABLE
@@ -69,6 +95,18 @@ publishMods {
         tagName = "v${mod.version}"
 
         allowEmptyFiles = true
+    }
+
+    discord {
+        style {
+            look = "MODERN"
+            link = "BUTTON"
+            fetchModrinthIcon("burnable-cobwebs")?.let { thumbnailUrl = it }
+            color = "#7B679A"
+        }
+        webhookUrl = providers.environmentVariable("DISCORD_WEBHOOK")
+        dryRunWebhookUrl = providers.environmentVariable("DISCORD_WEBHOOK_DRY_RUN")
+        content = changelog.map { "A new version of ${mod.id} has been released! \n" + it }
     }
 
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent

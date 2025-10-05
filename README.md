@@ -15,7 +15,7 @@
 
 
 # Burnable Cobwebs
-Burnable Cobwebs is a lightweight mod which allows players to burn cobwebs using torches and/or flints and steels.
+Burnable Cobwebs is a lightweight mod which allows players to burn cobwebs using torches and/or flint and steel.
 
 # Want to support the Mod?
 Thank you so much for using this mod! While I don't accept donations, your support in other ways means the world and helps the mod grow.
