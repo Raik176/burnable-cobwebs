@@ -9,7 +9,8 @@ on:
       dry_run:
         description: "Perform a dry run"
         required: false
-        default: "false"
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -24,4 +25,4 @@ jobs:
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-          PUBLISH_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
+          PUBLISH_DRY_RUN: ${{ github.event.inputs.dry_run && '1' || '' }}
