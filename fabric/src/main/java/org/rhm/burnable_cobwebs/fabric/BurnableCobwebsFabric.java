@@ -7,7 +7,6 @@ import org.rhm.burnable_cobwebs.BurnableCobwebsModCommon;
 public class BurnableCobwebsFabric implements ModInitializer {
 	@Override
 	public void onInitialize() {
-		BurnableCobwebsModCommon.init();
 		UseBlockCallback.EVENT.register((player,world,hand,hitResult) -> BurnableCobwebsModCommon.blockInteractEvent(player, hand, world, hitResult.getBlockPos()));
 	}
 }

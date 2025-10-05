@@ -17,28 +17,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.TorchBlock;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
-
 public class BurnableCobwebsModCommon {
 	public static final String MOD_ID = "burnable_cobwebs";
-	// if tags/instances don't pick up i can use this supplier to manually add them
-	public static Supplier<List<Item>> customLighters;
-
-	public static void init() {
-		ItemRegistry.init();
-	}
 
 	public static boolean isLighter(ItemStack stack) {
 		Item item = stack.getItem();
 		if (item instanceof BlockItem bi)
 			return bi.getBlock() instanceof TorchBlock;
-		if (item instanceof FlintAndSteelItem)
-			return true;
 
-		return customLighters != null && Objects.requireNonNullElse(customLighters.get(), List.of()).contains(item);
-	}
+        return item instanceof FlintAndSteelItem;
+    }
 
 	public static InteractionResult blockInteractEvent(Player player, InteractionHand hand, Level world, BlockPos pos) {
 		if (world.getBlockState(pos).getBlock() != Blocks.COBWEB) return InteractionResult.PASS;

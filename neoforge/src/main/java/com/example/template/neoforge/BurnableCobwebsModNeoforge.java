@@ -1,5 +1,6 @@
 package com.example.template.neoforge;
 
+import net.minecraft.world.InteractionResult;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -11,11 +12,14 @@ import org.rhm.burnable_cobwebs.BurnableCobwebsModCommon;
 public class BurnableCobwebsModNeoforge {
 	public BurnableCobwebsModNeoforge(IEventBus bus, ModContainer mod) {
 		NeoForge.EVENT_BUS.addListener(this::onBlockRightClick);
-		BurnableCobwebsModCommon.init();
 	}
 
 	public void onBlockRightClick(PlayerInteractEvent.RightClickBlock event) {
-		event.setCancellationResult(BurnableCobwebsModCommon.blockInteractEvent(event.getEntity(), event.getHand(), event.getLevel(), event.getPos()));
-		event.setCanceled(true); //idk if i should do this but eh
-	}
+        InteractionResult result = BurnableCobwebsModCommon.blockInteractEvent(event.getEntity(), event.getHand(), event.getLevel(), event.getPos());
+		event.setCancellationResult(result);
+
+        if (result == InteractionResult.SUCCESS) {
+            event.setCanceled(true);
+        }
+    }
 }
