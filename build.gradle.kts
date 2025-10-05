@@ -97,17 +97,5 @@ publishMods {
         allowEmptyFiles = true
     }
 
-    discord {
-        style {
-            look = "MODERN"
-            link = "BUTTON"
-            fetchModrinthIcon("burnable-cobwebs")?.let { thumbnailUrl = it }
-            color = "#7B679A"
-        }
-        webhookUrl = providers.environmentVariable("DISCORD_WEBHOOK")
-        dryRunWebhookUrl = providers.environmentVariable("DISCORD_WEBHOOK_DRY_RUN")
-        content = changelog.map { "A new version of ${mod.id} has been released! \n" + it }
-    }
-
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
 }
