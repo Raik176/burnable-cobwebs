@@ -108,12 +108,15 @@ publishMods {
     displayName = "${common.mod.version} for Forge $minecraft"
 
     modrinth {
-        @Suppress("UNCHECKED_CAST")
-        (rootProject.extra["configureModrinth"] as (Project, ModrinthOptions) -> Unit)(project, this)
+        accessToken = providers.environmentVariable("MODRINTH_API_KEY")
+        projectId = common.mod.prop("modrinthId")
+        minecraftVersions = mod.prop("mc_targets").split(" ")
+        projectDescription = providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
     }
     curseforge {
-        @Suppress("UNCHECKED_CAST")
-        (rootProject.extra["configureCurseforge"] as (Project, CurseforgeOptions) -> Unit)(project, this)
+        accessToken = providers.environmentVariable("CF_API_KEY")
+        projectId = common.mod.prop("curseforgeId")
+        minecraftVersions = mod.prop("mc_targets").split(" ")
     }
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
