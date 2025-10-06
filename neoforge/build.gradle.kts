@@ -1,12 +1,15 @@
 @file:Suppress("UnstableApiUsage")
 
+import me.modmuss50.mpp.platforms.curseforge.CurseforgeOptions
+import me.modmuss50.mpp.platforms.modrinth.ModrinthOptions
 import net.fabricmc.loom.task.RemapJarTask
+import net.fabricmc.loom.task.RemapSourcesJarTask
+import org.gradle.kotlin.dsl.withType
 
 
 plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
-    id("com.github.johnrengelman.shadow")
     id("me.modmuss50.mod-publish-plugin")
 }
 
@@ -26,22 +29,6 @@ architectury {
     neoForge()
 }
 
-val commonBundle: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
-
-val shadowBundle: Configuration by configurations.creating {
-    isCanBeConsumed = false
-    isCanBeResolved = true
-}
-
-configurations {
-    compileClasspath.get().extendsFrom(commonBundle)
-    runtimeClasspath.get().extendsFrom(commonBundle)
-    get("developmentNeoForge").extendsFrom(commonBundle)
-}
-
 repositories {
     maven("https://maven.neoforged.net/releases/")
 }
@@ -55,8 +42,9 @@ dependencies {
         include(it)
     }
 
-    commonBundle(project(common.path, "namedElements")) { isTransitive = false }
-    shadowBundle(project(common.path, "transformProductionNeoForge")) { isTransitive = false }
+    implementation(project(common.path, "namedElements"))?.let {
+        include(it)
+    }
 }
 
 loom {
@@ -68,36 +56,23 @@ loom {
 
     runConfigs.all {
         isIdeConfigGenerated = false
-        runDir = "../../../run"
+        runDir = project.layout.projectDirectory.asFile.toPath().toAbsolutePath()
+            .relativize(rootProject.layout.projectDirectory.file("run").asFile.toPath())
+            .toString()
         vmArgs("-Dmixin.debug.export=true")
     }
 }
 
 java {
     withSourcesJar()
-    val java = if (stonecutter.eval(minecraft, ">=1.20.5"))
-        JavaVersion.VERSION_21 else JavaVersion.VERSION_17
+    val java = when {
+        stonecutter.eval(minecraft, ">=1.20.5") -> JavaVersion.VERSION_21
+        stonecutter.eval(minecraft, ">=1.17") -> JavaVersion.VERSION_17
+        else -> JavaVersion.VERSION_1_8
+    }
     targetCompatibility = java
     sourceCompatibility = java
 }
-
-tasks.jar {
-    archiveClassifier = "dev"
-}
-
-tasks.remapJar {
-    injectAccessWidener = true
-    input = tasks.shadowJar.get().archiveFile
-    archiveClassifier = null
-    dependsOn(tasks.shadowJar)
-}
-
-tasks.shadowJar {
-    configurations = listOf(shadowBundle)
-    archiveClassifier = "dev-shadow"
-    exclude("fabric.mod.json", "architectury.common.json")
-}
-
 
 fun convertMinecraftTargets(): String {
     return "[" + common.mod.prop("mc_targets").split(" ").joinToString(", ") + "]"
@@ -115,41 +90,32 @@ tasks.processResources {
     )
 }
 
-tasks.build {
-    group = "versioned"
-    description = "Must run through 'chiseledBuild'"
+tasks.withType<RemapJarTask> {
+    destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${mod.version}/$loader")
 }
-
-tasks.register<Copy>("buildAndCollect") {
-    group = "versioned"
-    description = "Must run through 'chiseledBuild'"
-    from(tasks.remapJar.get().archiveFile, tasks.remapSourcesJar.get().archiveFile)
-    into(rootProject.layout.buildDirectory.file("libs/${mod.version}/$loader"))
-    dependsOn("build")
+tasks.withType<RemapSourcesJarTask> {
+    destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${mod.version}/$loader")
 }
 
 publishMods {
-    file.set(tasks.named<RemapJarTask>("remapJar").flatMap { it.archiveFile })
-    changelog = providers.fileContents(common.layout.projectDirectory.file("../../CHANGELOG.md")).asText.get()
+    file = tasks.remapJar.get().archiveFile
+    changelog = rootProject.extra["changelog"] as String
     modLoaders.add("neoforge")
     type = STABLE
     displayName = "${common.mod.version} for Neoforge $minecraft"
 
     modrinth {
-        accessToken = providers.environmentVariable("MODRINTH_API_KEY")
-        projectId = "oQborhDc"
-        minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
-        projectDescription = providers.fileContents(common.layout.projectDirectory.file("../../README.md")).asText.get()
+        @Suppress("UNCHECKED_CAST")
+        (rootProject.extra["configureModrinth"] as (ModrinthOptions) -> Unit)(this)
     }
     curseforge {
-        accessToken = providers.environmentVariable("CF_API_KEY")
-        projectId = "1132367"
-        minecraftVersions.addAll(common.mod.prop("mc_targets").split(" "))
+        @Suppress("UNCHECKED_CAST")
+        (rootProject.extra["configureCurseforge"] as (CurseforgeOptions) -> Unit)(this)
     }
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
 
-        parent(common.tasks.named("publishGithub"))
+        parent(rootProject.tasks.named("publishGithub"))
     }
 
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
