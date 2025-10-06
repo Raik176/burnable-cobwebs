@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,6 +19,7 @@ plugins {
     id("dev.architectury.loom") version "1.11-SNAPSHOT" apply false
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("me.modmuss50.mod-publish-plugin") version "1.0.0"
+    id("se.bjurr.gitchangelog.git-changelog-gradle-plugin") version "3.1.1"
 }
 stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
@@ -96,15 +98,15 @@ tasks.named("publishMods") {
 tasks.register("publishMod") {
     group = "publishing"
 
+    dependsOn(tasks.named("gitChangelog"))
+
     stonecutter.tree.nodes.forEach {
         it.project.tasks.findByName("publishMods")?.let { publishTask ->
             dependsOn(publishTask)
         }
     }
 
-    dependsOn(
-        tasks.named("publishGithub")
-    )
+    dependsOn(tasks.named("publishGithub"))
 
     doLast {
         with(URI(providers.environmentVariable("DISCORD_WEBHOOK").get()).toURL().openConnection() as HttpURLConnection) {
@@ -156,4 +158,68 @@ publishMods {
 
 afterEvaluate {
     extra["changelog"] = changelogProvider.get()
+}
+
+fun getLatestTag(): String {
+    val url = URI("https://api.github.com/repos/${mod.prop("github")}/tags").toURL()
+    val connection = url.openConnection() as HttpURLConnection
+
+    val response = connection.inputStream.bufferedReader().readText()
+    val json = Json.parseToJsonElement(response).jsonArray
+
+    return json[0].jsonObject["name"]!!.jsonPrimitive.content
+}
+
+tasks.gitChangelog {
+    fromRevision.set(getLatestTag())
+    toRevision.set("HEAD")
+
+    templateContent.set("""
+{{#eachCommitType commits type='feat'}}
+### ✨ Features
+{{#eachCommitType commits type='feat'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='fix'}}
+### 🐛 Bug Fixes
+{{#eachCommitType commits type='fix'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='chore'}}
+### 🧹 Chores
+{{#eachCommitType commits type='chore'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='docs'}}
+### 📚 Documentation
+{{#eachCommitType commits type='docs'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='refactor'}}
+### ♻️ Refactors
+{{#eachCommitType commits type='refactor'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='perf'}}
+### ⚡ Performance
+{{#eachCommitType commits type='perf'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='test'}}
+### 🧪 Tests
+{{#eachCommitType commits type='test'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='ci'}}
+### 🤖 CI
+{{#eachCommitType commits type='ci'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+{{#eachCommitType commits type='revert'}}
+### ⏪ Reverts
+{{#eachCommitType commits type='revert'}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+{{/eachCommitType}}
+""")
+    file.set(rootProject.layout.projectDirectory.file("CHANGELOG.md").asFile)
 }
