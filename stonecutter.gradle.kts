@@ -129,6 +129,19 @@ publishMods {
     type = STABLE
     displayName = mod.version
 
+    extra["configureCurseforge"] = { common: Project, opts: CurseforgeOptions ->
+        opts.accessToken = providers.environmentVariable("CF_API_KEY")
+        opts.projectId = mod.prop("curseforgeId")
+        opts.minecraftVersions = common.mod.prop("mc_targets").split(" ")
+    }
+
+    extra["configureModrinth"] = { common: Project, opts: ModrinthOptions ->
+        opts.accessToken = providers.environmentVariable("MODRINTH_API_KEY")
+        opts.projectId = mod.prop("modrinthId")
+        opts.minecraftVersions = common.mod.prop("mc_targets").split(" ")
+        opts.projectDescription = providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
+    }
+
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = mod.prop("github")

@@ -100,31 +100,26 @@ tasks.withType<RemapSourcesJarTask> {
     destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${mod.version}/$loader")
 }
 
-afterEvaluate {
-    publishMods {
-        file = tasks.remapJar.get().archiveFile
-        changelog = rootProject.extra["changelog"] as String
-        modLoaders.add("forge")
-        type = STABLE
-        displayName = "${common.mod.version} for Forge $minecraft"
+publishMods {
+    file = tasks.remapJar.get().archiveFile
+    changelog = rootProject.extra["changelog"] as String
+    modLoaders.add("forge")
+    type = STABLE
+    displayName = "${common.mod.version} for Forge $minecraft"
 
-        modrinth {
-            accessToken = providers.environmentVariable("MODRINTH_API_KEY")
-            projectId = common.mod.prop("modrinthId")
-            minecraftVersions = project.provider { mod.prop("mc_targets") }.map { it.split(" ") }
-            projectDescription = providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
-        }
-        curseforge {
-            accessToken = providers.environmentVariable("CF_API_KEY")
-            projectId = common.mod.prop("curseforgeId")
-            minecraftVersions = project.provider { mod.prop("mc_targets") }.map { it.split(" ") }
-        }
-        github {
-            accessToken = providers.environmentVariable("GITHUB_TOKEN")
-
-            parent(rootProject.tasks.named("publishGithub"))
-        }
-
-        dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
+    modrinth {
+        @Suppress("UNCHECKED_CAST")
+        (rootProject.extra["configureModrinth"] as (Project, ModrinthOptions) -> Unit)(common, this)
     }
+    curseforge {
+        @Suppress("UNCHECKED_CAST")
+        (rootProject.extra["configureCurseforge"] as (Project, CurseforgeOptions) -> Unit)(common, this)
+    }
+    github {
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+
+        parent(rootProject.tasks.named("publishGithub"))
+    }
+
+    dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
 }
