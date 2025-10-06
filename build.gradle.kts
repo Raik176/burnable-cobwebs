@@ -49,8 +49,3 @@ java {
     targetCompatibility = java
     sourceCompatibility = java
 }
-
-tasks.build {
-    group = "versioned"
-    description = "Must run through 'chiseledBuild'"
-}

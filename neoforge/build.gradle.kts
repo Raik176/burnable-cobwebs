@@ -107,13 +107,13 @@ publishMods {
     modrinth {
         accessToken = providers.environmentVariable("MODRINTH_API_KEY")
         projectId = common.mod.prop("modrinthId")
-        minecraftVersions = mod.prop("mc_targets").split(" ")
+        minecraftVersions = project.provider { mod.prop("mc_targets") }.map { it.split(" ") }
         projectDescription = providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
     }
     curseforge {
         accessToken = providers.environmentVariable("CF_API_KEY")
         projectId = common.mod.prop("curseforgeId")
-        minecraftVersions = mod.prop("mc_targets").split(" ")
+        minecraftVersions = project.provider { mod.prop("mc_targets") }.map { it.split(" ") }
     }
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
