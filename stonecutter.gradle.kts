@@ -132,13 +132,17 @@ publishMods {
     extra["configureCurseforge"] = { proj: Project, opts: CurseforgeOptions ->
         opts.accessToken = providers.environmentVariable("CF_API_KEY")
         opts.projectId = mod.prop("curseforgeId")
-        opts.minecraftVersions.addAll(proj.mod.prop("mc_targets").split(" "))
+        opts.minecraftVersions.set(
+            proj.provider { proj.mod.prop("mc_targets").split(" ") }
+        )
     }
 
     extra["configureModrinth"] = { proj: Project, opts: ModrinthOptions ->
         opts.accessToken = providers.environmentVariable("MODRINTH_API_KEY")
         opts.projectId = mod.prop("modrinthId")
-        opts.minecraftVersions.addAll(proj.mod.prop("mc_targets").split(" "))
+        opts.minecraftVersions.set(
+            proj.provider { proj.mod.prop("mc_targets").split(" ") }
+        )
         opts.projectDescription = providers.fileContents(layout.projectDirectory.file("../../README.md")).asText
     }
 
