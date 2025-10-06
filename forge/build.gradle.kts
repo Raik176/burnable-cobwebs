@@ -109,11 +109,11 @@ publishMods {
 
     modrinth {
         @Suppress("UNCHECKED_CAST")
-        (rootProject.extra["configureModrinth"] as (ModrinthOptions) -> Unit)(this)
+        (rootProject.extra["configureModrinth"] as (Project, ModrinthOptions) -> Unit)(project, this)
     }
     curseforge {
         @Suppress("UNCHECKED_CAST")
-        (rootProject.extra["configureCurseforge"] as (CurseforgeOptions) -> Unit)(this)
+        (rootProject.extra["configureCurseforge"] as (Project, CurseforgeOptions) -> Unit)(project, this)
     }
     github {
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
