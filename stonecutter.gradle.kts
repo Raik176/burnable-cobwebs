@@ -32,14 +32,6 @@ plugins {
 }
 stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
-configurations.all {
-    resolutionStrategy {
-        force("com.fasterxml.jackson.core:jackson-databind:2.12.7.2")
-        force("com.fasterxml.jackson.core:jackson-core:2.12.7")
-        force("com.fasterxml.jackson.core:jackson-annotations:2.12.7")
-    }
-}
-
 val changelogProvider = layout.buildDirectory.file("CHANGELOG.md")
 changelogProvider.get().asFile.apply {
     if (!exists()) {
