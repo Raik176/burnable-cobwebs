@@ -34,8 +34,10 @@ stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
 val changelogProvider = layout.buildDirectory.file("CHANGELOG.md")
 changelogProvider.get().asFile.apply {
-    if (!exists())
+    if (!exists()) {
+        parentFile?.mkdirs()
         createNewFile()
+    }
 }
 
 val changelogContentsProvider = providers.fileContents(changelogProvider).asText
