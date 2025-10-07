@@ -32,6 +32,12 @@ plugins {
 }
 stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
+buildscript {
+    dependencies {
+        classpath("com.fasterxml.jackson.core:jackson-databind:2.20.0")
+    }
+}
+
 val changelogProvider = layout.buildDirectory.file("CHANGELOG.md")
 changelogProvider.get().asFile.apply {
     if (!exists()) {
