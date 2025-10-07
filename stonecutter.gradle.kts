@@ -1,6 +1,4 @@
 import kotlinx.serialization.ExperimentalSerializationApi
-import me.modmuss50.mpp.platforms.curseforge.CurseforgeOptions
-import me.modmuss50.mpp.platforms.modrinth.ModrinthOptions
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -11,8 +9,12 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import net.fabricmc.loom.task.RemapJarTask
+import net.fabricmc.loom.task.RemapSourcesJarTask
+import org.gradle.kotlin.dsl.withType
 import java.net.HttpURLConnection
 import java.net.URI
+
 
 plugins {
     id("dev.kikugie.stonecutter")
@@ -20,10 +22,23 @@ plugins {
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("me.modmuss50.mod-publish-plugin") version "1.0.0"
     id("se.bjurr.gitchangelog.git-changelog-gradle-plugin") version "3.1.1"
+
+    kotlin("jvm") version "2.2.10" apply false
+    id("com.google.devtools.ksp") version "2.2.10-2.0.2" apply false
+    id("dev.kikugie.fletching-table") version "0.1.0-alpha.22" apply false
+    id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22" apply false
+    id("dev.kikugie.fletching-table.lexforge") version "0.1.0-alpha.22" apply false
+    id("dev.kikugie.fletching-table.neoforge") version "0.1.0-alpha.22" apply false
 }
 stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
-val changelogProvider = providers.fileContents(layout.projectDirectory.file("CHANGELOG.md")).asText
+val changelogProvider = layout.buildDirectory.file("CHANGELOG.md")
+changelogProvider.get().asFile.apply {
+    if (!exists())
+        createNewFile()
+}
+
+val changelogContentsProvider = providers.fileContents(changelogProvider).asText
 
 @OptIn(ExperimentalSerializationApi::class)
 fun generatePayload(): JsonObject {
@@ -45,7 +60,7 @@ fun generatePayload(): JsonObject {
         putJsonArray("embeds") {
             add(buildJsonObject {
                 put("title", "${mod.name} ${mod.version} has been released!")
-                put("description", changelogProvider.get())
+                put("description", changelogContentsProvider.get())
                 put("color", 7506394)
                 iconUrl?.let { putJsonObject("thumbnail") { put("url", it) } }
             })
@@ -84,10 +99,127 @@ tasks.register("build") {
 }
 
 for (node in stonecutter.tree.nodes) {
-    if (node.branch.id.isEmpty() || node.metadata.version != stonecutter.current?.version) continue
-    for (type in listOf("Client", "Server")) tasks.register("runActive$type${node.branch.id.upperCaseFirst()}") {
-        group = "project"
-        dependsOn("${node.hierarchy}:run$type")
+    val minecraft = node.metadata.version
+
+    node.project.repositories {
+        fun strictMaven(url: String, alias: String, vararg groups: String) = exclusiveContent {
+            forRepository { maven(url) { name = alias } }
+            filter { groups.forEach(::includeGroup) }
+        }
+        strictMaven("https://www.cursemaven.com", "Curseforge", "curse.maven")
+        strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
+    }
+
+    node.project.plugins.apply("org.jetbrains.kotlin.jvm")
+    node.project.plugins.apply("com.google.devtools.ksp")
+
+    node.project.afterEvaluate {
+        val projectStonecutter = node.project.extensions.getByType<dev.kikugie.stonecutter.build.StonecutterBuildExtension>()
+        val loader = node.project.prop("loom.platform") ?: "common"
+        val common: Project = requireNotNull(projectStonecutter.node.sibling("")) {
+            "No common project for $project"
+        }.project
+
+        node.project.dependencies {
+            "io.github.llamalad7:mixinextras-common:${mod.dep("mixin_extras")}".let {
+                add("annotationProcessor", it)
+                add("implementation", it)
+            }
+
+            add("minecraft", "com.mojang:minecraft:$minecraft")
+            add(
+                "mappings",
+                node.project.extensions.getByType<net.fabricmc.loom.api.LoomGradleExtensionAPI>().officialMojangMappings()
+            )
+
+            if (loader != "common") {
+                project(common.path, "namedElements").let {
+                    add("implementation", it)
+                    add("include", it)
+                }
+            }
+        }
+
+        if (loader != "common") {
+            node.project.tasks.withType<RemapJarTask> {
+                destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${mod.version}/$loader")
+            }
+            node.project.tasks.withType<RemapSourcesJarTask> {
+                destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${mod.version}/$loader")
+            }
+
+            node.project.extensions.configure<me.modmuss50.mpp.ModPublishExtension> {
+                file.set(node.project.tasks.named("remapJar", RemapJarTask::class.java).flatMap { it.archiveFile })
+                changelog = changelogContentsProvider
+                type = STABLE
+
+                modrinth {
+                    accessToken = providers.environmentVariable("MODRINTH_API_KEY")
+                    projectId = mod.prop("modrinthId")
+                    minecraftVersions = common.mod.prop("mc_targets").split(" ")
+                    projectDescription = providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
+                }
+                curseforge {
+                    accessToken = providers.environmentVariable("CF_API_KEY")
+                    projectId = mod.prop("curseforgeId")
+                    minecraftVersions = common.mod.prop("mc_targets").split(" ")
+                }
+                github {
+                    accessToken = providers.environmentVariable("GITHUB_TOKEN")
+
+                    parent(rootProject.tasks.named("publishGithub"))
+                }
+
+                dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
+            }
+        }
+
+        node.project.version = "${mod.version}+$minecraft"
+        node.project.group = "${mod.group}.$loader"
+        node.project.extensions.configure<BasePluginExtension> {
+            archivesName.set("${mod.id}-$loader")
+        }
+
+        node.project.extensions.configure<JavaPluginExtension> {
+            withSourcesJar()
+            val java = when {
+                projectStonecutter.eval(minecraft, ">=1.20.5") -> JavaVersion.VERSION_21
+                projectStonecutter.eval(minecraft, ">=1.17") -> JavaVersion.VERSION_17
+                else -> JavaVersion.VERSION_1_8
+            }
+            targetCompatibility = java
+            sourceCompatibility = java
+        }
+
+        node.project.extensions.configure<net.fabricmc.loom.api.LoomGradleExtensionAPI> {
+            if (node.branch.id == "forge") {
+                forge {
+                    convertAccessWideners = true
+                    forge.mixinConfigs("${mod.id}-common.mixins.json")
+                }
+            }
+
+            decompilers {
+                get("vineflower").apply { // Adds names to lambdas - useful for mixins
+                    options.put("mark-corresponding-synthetics", "1")
+                }
+            }
+
+            runConfigs.all {
+                isIdeConfigGenerated = false
+                runDir = project.layout.projectDirectory.asFile.toPath().toAbsolutePath()
+                    .relativize(rootProject.layout.projectDirectory.file("run").asFile.toPath())
+                    .toString()
+                vmArgs("-Dmixin.debug.export=true")
+            }
+        }
+    }
+
+    if (!node.branch.id.isEmpty() && node.metadata.version == stonecutter.current?.version) {
+        for (type in listOf("Client", "Server")) tasks.register("runActive$type${node.branch.id.upperCaseFirst()}") {
+            group = "project"
+            dependsOn("${node.hierarchy}:run$type")
+        }
     }
 }
 
@@ -98,7 +230,7 @@ tasks.named("publishMods") {
 tasks.register("publishMod") {
     group = "publishing"
 
-    dependsOn(tasks.named("gitChangelog"))
+    dependsOn(tasks.gitChangelog)
 
     stonecutter.tree.nodes.forEach {
         it.project.tasks.findByName("publishMods")?.let { publishTask ->
@@ -127,24 +259,12 @@ tasks.named("publishMods") {
 
 publishMods {
     version = mod.version
-    changelog = changelogProvider
+    changelog = changelogContentsProvider
     type = STABLE
     displayName = mod.version
 
-    extra["configureCurseforge"] = { common: Project, opts: CurseforgeOptions ->
-        opts.accessToken = providers.environmentVariable("CF_API_KEY")
-        opts.projectId = mod.prop("curseforgeId")
-        opts.minecraftVersions = common.mod.prop("mc_targets").split(" ")
-    }
-
-    extra["configureModrinth"] = { common: Project, opts: ModrinthOptions ->
-        opts.accessToken = providers.environmentVariable("MODRINTH_API_KEY")
-        opts.projectId = mod.prop("modrinthId")
-        opts.minecraftVersions = common.mod.prop("mc_targets").split(" ")
-        opts.projectDescription = providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
-    }
-
     github {
+        changelog = changelogContentsProvider
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = mod.prop("github")
         commitish = "main"
@@ -154,10 +274,6 @@ publishMods {
     }
 
     dryRun = providers.environmentVariable("PUBLISH_DRY_RUN").isPresent
-}
-
-afterEvaluate {
-    extra["changelog"] = changelogProvider.get()
 }
 
 fun getLatestTag(): String {
@@ -171,55 +287,82 @@ fun getLatestTag(): String {
 }
 
 tasks.gitChangelog {
+    file.set(changelogProvider.map { it.asFile })
     fromRevision.set(getLatestTag())
     toRevision.set("HEAD")
 
     templateContent.set("""
-{{#eachCommitType commits type='feat'}}
+{{#ifContainsType commits type='feat'}}
 ### ✨ Features
-{{#eachCommitType commits type='feat'}}
+{{#commits}}
+  {{#ifCommitType . type='feat'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='fix'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='fix'}}
 ### 🐛 Bug Fixes
-{{#eachCommitType commits type='fix'}}
+{{#commits}}
+  {{#ifCommitType . type='fix'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='chore'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='chore'}}
 ### 🧹 Chores
-{{#eachCommitType commits type='chore'}}
+{{#commits}}
+  {{#ifCommitType . type='chore'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='docs'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='docs'}}
 ### 📚 Documentation
-{{#eachCommitType commits type='docs'}}
+{{#commits}}
+  {{#ifCommitType . type='docs'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='refactor'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='refactor'}}
 ### ♻️ Refactors
-{{#eachCommitType commits type='refactor'}}
+{{#commits}}
+  {{#ifCommitType . type='refactor'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='perf'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='perf'}}
 ### ⚡ Performance
-{{#eachCommitType commits type='perf'}}
+{{#commits}}
+  {{#ifCommitType . type='perf'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='test'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='test'}}
 ### 🧪 Tests
-{{#eachCommitType commits type='test'}}
+{{#commits}}
+  {{#ifCommitType . type='test'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='ci'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='ci'}}
 ### 🤖 CI
-{{#eachCommitType commits type='ci'}}
+{{#commits}}
+  {{#ifCommitType . type='ci'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
-{{#eachCommitType commits type='revert'}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
+{{#ifContainsType commits type='revert'}}
 ### ⏪ Reverts
-{{#eachCommitType commits type='revert'}}
+{{#commits}}
+  {{#ifCommitType . type='revert'}}
 - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}}{{commitDescription .}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
-{{/eachCommitType}}
+  {{/ifCommitType}}
+{{/commits}}
+{{/ifContainsType}}
 """)
-    file.set(rootProject.layout.projectDirectory.file("CHANGELOG.md").asFile)
 }
