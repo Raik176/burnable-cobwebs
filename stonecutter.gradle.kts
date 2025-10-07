@@ -34,7 +34,7 @@ stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
 buildscript {
     dependencies {
-        classpath("com.fasterxml.jackson.core:jackson-databind:2.20.0")
+        classpath("com.fasterxml.jackson.core:jackson-databind:2.12.7.2")
     }
 }
 
