@@ -10,10 +10,18 @@ import net.minecraftforge.fml.common.Mod;
 @Mod(BurnableCobwebsModCommon.MOD_ID)
 public class BurnableCobwebsModForge {
 	public BurnableCobwebsModForge() {
-		MinecraftForge.EVENT_BUS.addListener(this::onBlockRightClick);
+        //? if >=1.21.6 {
+        /*PlayerInteractEvent.RightClickBlock.BUS.addListener(this::intermediaryHandler);
+        *///?} else {
+		MinecraftForge.EVENT_BUS.<PlayerInteractEvent.RightClickBlock>addListener((event) -> {
+            if (intermediaryHandler(event)) {
+                event.setCanceled(true);
+            }
+        });
+        //?}
     }
 
-	public void onBlockRightClick(PlayerInteractEvent.RightClickBlock event) {
+    public boolean intermediaryHandler(PlayerInteractEvent.RightClickBlock event) {
         InteractionResult result = BurnableCobwebsModCommon.blockInteractEvent(
                 (Player) event.getEntity(),
                 event.getHand(),
@@ -25,8 +33,6 @@ public class BurnableCobwebsModForge {
         );
         event.setCancellationResult(result);
 
-        if (result == InteractionResult.SUCCESS) {
-            event.setCanceled(true);
-        }
-	}
+        return result == InteractionResult.SUCCESS;
+    }
 }

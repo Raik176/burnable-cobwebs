@@ -53,7 +53,7 @@ public class BurnableCobwebsModCommon {
 				);
 			}
 
-			if (!world.isClientSide) {
+			if (!world.isClientSide()) {
 				ServerLevel serverWorld = (ServerLevel) world;
 				if (itemStack.isDamageableItem()) {
 					//? if <=1.20.1 {

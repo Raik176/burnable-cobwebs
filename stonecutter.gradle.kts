@@ -87,7 +87,7 @@ for (node in stonecutter.tree.nodes) {
     if (node.branch.id.isEmpty() || node.metadata.version != stonecutter.current?.version) continue
     for (type in listOf("Client", "Server")) tasks.register("runActive$type${node.branch.id.upperCaseFirst()}") {
         group = "project"
-        dependsOn("${node.hierarchy}run$type")
+        dependsOn("${node.hierarchy}:run$type")
     }
 }
 
