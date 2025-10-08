@@ -1,6 +1,8 @@
 plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
+
+    id("dev.kikugie.fletching-table")
 }
 
 val minecraft = stonecutter.current.version

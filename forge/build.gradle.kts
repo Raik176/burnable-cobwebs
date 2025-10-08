@@ -2,6 +2,8 @@ plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
     id("me.modmuss50.mod-publish-plugin")
+
+    id("dev.kikugie.fletching-table.lexforge")
 }
 
 var minecraft: String = stonecutter.current.version

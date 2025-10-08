@@ -1,4 +1,3 @@
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -34,6 +33,13 @@ plugins {
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("me.modmuss50.mod-publish-plugin") version "1.0.0"
     id("se.bjurr.gitchangelog.git-changelog-gradle-plugin") version "3.1.1"
+
+    kotlin("jvm") version "2.2.10" apply false
+    id("com.google.devtools.ksp") version "2.2.10-2.0.2" apply false
+    id("dev.kikugie.fletching-table") version "0.1.0-alpha.22" apply false
+    id("dev.kikugie.fletching-table.fabric") version "0.1.0-alpha.22" apply false
+    id("dev.kikugie.fletching-table.lexforge") version "0.1.0-alpha.22" apply false
+    id("dev.kikugie.fletching-table.neoforge") version "0.1.0-alpha.22" apply false
 }
 stonecutter active "1.20.6" /* [SC] DO NOT EDIT */
 
@@ -69,6 +75,9 @@ for (node in stonecutter.tree.nodes) {
         strictMaven("https://www.cursemaven.com", "Curseforge", "curse.maven")
         strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
     }
+
+    node.project.plugins.apply("org.jetbrains.kotlin.jvm")
+    node.project.plugins.apply("com.google.devtools.ksp")
 
     node.project.afterEvaluate {
         val projectStonecutter = node.project.extensions.getByType<dev.kikugie.stonecutter.build.StonecutterBuildExtension>()

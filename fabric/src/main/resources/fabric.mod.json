@@ -15,13 +15,9 @@
   "license": "${license}",
   "icon": "assets/${id}/icon.png",
   "environment": "*",
-  "entrypoints": {
-    "main": [
-      "org.rhm.${id}.fabric.BurnableCobwebsFabric"
-    ]
-  },
   "depends": {
     "fabricloader": ">=0.15",
-    "minecraft": "${minecraft}"
+    "minecraft": "${minecraft}",
+    "fabric": "*"
   }
 }
