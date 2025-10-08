@@ -2,8 +2,6 @@ plugins {
     id("dev.architectury.loom")
     id("architectury-plugin")
     id("me.modmuss50.mod-publish-plugin")
-
-    id("dev.kikugie.fletching-table.fabric")
 }
 
 val minecraft: String = stonecutter.current.version
@@ -14,12 +12,6 @@ val common: Project = requireNotNull(stonecutter.node.sibling("")) {
 architectury {
     platformSetupLoomIde()
     fabric()
-}
-
-fletchingTable {
-    fabric {
-        entrypointMappings.put("modmenu", "com.terraformersmc.modmenu.api.ModMenuApi")
-    }
 }
 
 dependencies {
