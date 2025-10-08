@@ -106,6 +106,13 @@ for (node in stonecutter.tree.nodes) {
             }
         }
 
+        node.project.extensions.configure<dev.kikugie.fletching_table.extension.FletchingTableExtension> {
+            j52j.register("main") {
+                extension("json", "assets/${mod.id}/**/*.json5")
+                extension("json", "data/${mod.id}/**/*.json5")
+            }
+        }
+
         if (loader != "common") {
             node.project.tasks.withType<RemapJarTask> {
                 destinationDirectory = rootProject.layout.buildDirectory.dir("libs/${mod.version}/$loader")
