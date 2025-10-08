@@ -15,6 +15,18 @@ import org.gradle.kotlin.dsl.withType
 import java.net.HttpURLConnection
 import java.net.URI
 
+buildscript {
+    configurations.all {
+        resolutionStrategy {
+            force(
+                "com.fasterxml.jackson.core:jackson-core:2.17.1",
+                "com.fasterxml.jackson.core:jackson-databind:2.17.1",
+                "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.1",
+                "com.fasterxml.jackson.core:jackson-annotations:2.17.1"
+            )
+        }
+    }
+}
 
 plugins {
     id("dev.kikugie.stonecutter")
