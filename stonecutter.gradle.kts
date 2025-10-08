@@ -198,8 +198,6 @@ tasks.register("publishMod") {
     dependsOn(tasks.named("publishGithub"))
 
     doLast {
-        println(changelogContentsProvider.asText.get())
-
         if (providers.environmentVariable("PUBLISH_DRY_RUN").isPresent)
             return@doLast
 
