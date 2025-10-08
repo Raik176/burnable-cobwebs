@@ -275,7 +275,6 @@ publishMods {
     displayName = mod.version
 
     github {
-        changelog = changelogContentsProvider.asText
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = mod.prop("github")
         commitish = "main"
@@ -301,6 +300,35 @@ tasks.gitChangelog {
     file.set(changelogProvider.map { it.asFile })
     fromRevision.set(getLatestTag())
     toRevision.set("HEAD")
+
+    doLast {
+        val changelogFile = tasks.gitChangelog.flatMap { it.file }.get()
+        if (!changelogFile.exists())
+            return@doLast
+
+        fun decodeHtmlNumericEntities(input: String): String {
+            val regex = Regex("&#(x?)([0-9A-Fa-f]+);")
+            return regex.replace(input) { match ->
+                val isHex = match.groupValues[1].equals("x", ignoreCase = true)
+                val numPart = match.groupValues[2]
+                val codePoint = runCatching {
+                    if (isHex) numPart.toInt(16) else numPart.toInt()
+                }.getOrNull()
+
+                if (codePoint != null && Character.isValidCodePoint(codePoint))
+                    String(Character.toChars(codePoint))
+                else
+                    match.value
+            }
+        }
+
+        val original = changelogFile.readText()
+        val decoded = decodeHtmlNumericEntities(original)
+
+        if (decoded != original) {
+            changelogFile.writeText(decoded)
+        }
+    }
 
     templateContent.set("""
 {{#ifContainsType commits type='feat'}}
