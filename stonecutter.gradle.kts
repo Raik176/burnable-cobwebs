@@ -45,54 +45,7 @@ changelogProvider.get().asFile.apply {
     }
 }
 
-val changelogContentsProvider = providers.fileContents(changelogProvider).asText
-
-@OptIn(ExperimentalSerializationApi::class)
-fun generatePayload(): JsonObject {
-    val modrinthJson = try {
-        val url = URI("https://api.modrinth.com/v2/project/${mod.prop("modrinthSlug")}").toURL()
-        with(url.openConnection() as HttpURLConnection) {
-            requestMethod = "GET"
-            inputStream.bufferedReader().readText()
-        }
-    } catch (_: Exception) {
-        null
-    }
-
-    val iconUrl = modrinthJson?.let {
-        Json.parseToJsonElement(it).jsonObject["icon_url"]?.jsonPrimitive?.contentOrNull
-    }
-
-    return buildJsonObject {
-        putJsonArray("embeds") {
-            add(buildJsonObject {
-                put("title", "${mod.name} ${mod.version} has been released!")
-                put("description", changelogContentsProvider.get())
-                put("color", 7506394)
-                iconUrl?.let { putJsonObject("thumbnail") { put("url", it) } }
-            })
-        }
-        putJsonArray("components") {
-            add(buildJsonObject {
-                put("type", 1)
-                putJsonArray("components") {
-                    listOf(
-                        "Modrinth" to "https://modrinth.com/mod/${mod.prop("modrinthSlug")}",
-                        "CurseForge" to "https://www.curseforge.com/minecraft/mc-mods/${mod.prop("curseforgeSlug")}",
-                        "GitHub" to "https://github.com/${mod.prop("github")}"
-                    ).forEach { (label, url) ->
-                        add(buildJsonObject {
-                            put("type", 2)
-                            put("style", 5)
-                            put("label", label)
-                            put("url", url)
-                        })
-                    }
-                }
-            })
-        }
-    }
-}
+val changelogContentsProvider = providers.fileContents(changelogProvider)
 
 tasks.register("build") {
     group = "build"
@@ -154,7 +107,7 @@ for (node in stonecutter.tree.nodes) {
 
             node.project.extensions.configure<me.modmuss50.mpp.ModPublishExtension> {
                 file.set(node.project.tasks.named("remapJar", RemapJarTask::class.java).flatMap { it.archiveFile })
-                changelog = changelogContentsProvider
+                changelog = changelogContentsProvider.asText
                 type = STABLE
 
                 modrinth {
@@ -245,11 +198,58 @@ tasks.register("publishMod") {
     dependsOn(tasks.named("publishGithub"))
 
     doLast {
+        println(changelogContentsProvider.asText.get())
+
+        if (providers.environmentVariable("PUBLISH_DRY_RUN").isPresent)
+            return@doLast
+
         with(URI(providers.environmentVariable("DISCORD_WEBHOOK").get()).toURL().openConnection() as HttpURLConnection) {
             requestMethod = "POST"
             setRequestProperty("Content-Type", "application/json")
             doOutput = true
-            outputStream.write(Json.encodeToString(JsonObject.serializer(), generatePayload()).toByteArray())
+            val modrinthJson = try {
+                val url = URI("https://api.modrinth.com/v2/project/${mod.prop("modrinthSlug")}").toURL()
+                with(url.openConnection() as HttpURLConnection) {
+                    requestMethod = "GET"
+                    inputStream.bufferedReader().readText()
+                }
+            } catch (_: Exception) {
+                null
+            }
+
+            val iconUrl = modrinthJson?.let {
+                Json.parseToJsonElement(it).jsonObject["icon_url"]?.jsonPrimitive?.contentOrNull
+            }
+
+            outputStream.write(Json.encodeToString(JsonObject.serializer(), buildJsonObject {
+                putJsonArray("embeds") {
+                    add(buildJsonObject {
+                        put("title", "${mod.name} ${mod.version} has been released!")
+                        put("description", changelogContentsProvider.asText.get())
+                        put("color", 7506394)
+                        iconUrl?.let { putJsonObject("thumbnail") { put("url", it) } }
+                    })
+                }
+                putJsonArray("components") {
+                    add(buildJsonObject {
+                        put("type", 1)
+                        putJsonArray("components") {
+                            listOf(
+                                "Modrinth" to "https://modrinth.com/mod/${mod.prop("modrinthSlug")}",
+                                "CurseForge" to "https://www.curseforge.com/minecraft/mc-mods/${mod.prop("curseforgeSlug")}",
+                                "GitHub" to "https://github.com/${mod.prop("github")}"
+                            ).forEach { (label, url) ->
+                                add(buildJsonObject {
+                                    put("type", 2)
+                                    put("style", 5)
+                                    put("label", label)
+                                    put("url", url)
+                                })
+                            }
+                        }
+                    })
+                }
+            }).toByteArray())
             if (responseCode != 204) {
                 println("Failed to send webhook: $responseCode")
             }
@@ -263,12 +263,12 @@ tasks.named("publishMods") {
 
 publishMods {
     version = mod.version
-    changelog = changelogContentsProvider
+    changelog = changelogContentsProvider.asText
     type = STABLE
     displayName = mod.version
 
     github {
-        changelog = changelogContentsProvider
+        changelog = changelogContentsProvider.asText
         accessToken = providers.environmentVariable("GITHUB_TOKEN")
         repository = mod.prop("github")
         commitish = "main"
