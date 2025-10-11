@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar.Companion.shadowJar
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -33,6 +35,7 @@ plugins {
     id("architectury-plugin") version "3.4-SNAPSHOT" apply false
     id("me.modmuss50.mod-publish-plugin") version "1.0.0"
     id("se.bjurr.gitchangelog.git-changelog-gradle-plugin") version "3.1.1"
+    id("com.gradleup.shadow") version "9.2.2" apply false
 
     kotlin("jvm") version "2.2.10" apply false
     id("com.google.devtools.ksp") version "2.2.10-2.0.2" apply false
@@ -78,6 +81,7 @@ for (node in stonecutter.tree.nodes) {
 
     node.project.plugins.apply("org.jetbrains.kotlin.jvm")
     node.project.plugins.apply("com.google.devtools.ksp")
+    node.project.plugins.apply("com.gradleup.shadow")
 
     node.project.afterEvaluate {
         val projectStonecutter = node.project.extensions.getByType<dev.kikugie.stonecutter.build.StonecutterBuildExtension>()
@@ -86,31 +90,55 @@ for (node in stonecutter.tree.nodes) {
             "No common project for $project"
         }.project
 
+        val commonBundle: Configuration by node.project.configurations.creating {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+        }
+        val shadowBundle: Configuration by node.project.configurations.creating {
+            isCanBeConsumed = false
+            isCanBeResolved = true
+        }
+
+        node.project.dependencies {
+            add("minecraft", "com.mojang:minecraft:$minecraft")
+            add(
+                "mappings",
+                node.project.extensions.getByType<net.fabricmc.loom.api.LoomGradleExtensionAPI>().officialMojangMappings()
+            )
+        }
+
+        node.project.configurations {
+            named("compileClasspath") { extendsFrom(commonBundle) }
+            named("runtimeClasspath") { extendsFrom(commonBundle) }
+            maybeCreate("developmentFabric").extendsFrom(commonBundle)
+        }
+
         node.project.dependencies {
             "io.github.llamalad7:mixinextras-common:${mod.dep("mixin_extras")}".let {
                 add("annotationProcessor", it)
                 add("implementation", it)
             }
 
-            add("minecraft", "com.mojang:minecraft:$minecraft")
-            add(
-                "mappings",
-                node.project.extensions.getByType<net.fabricmc.loom.api.LoomGradleExtensionAPI>().officialMojangMappings()
-            )
-
             if (loader != "common") {
-                project(common.path, "namedElements").let {
-                    add("implementation", it)
-                    add("include", it)
-                }
+                commonBundle(project(common.path, "namedElements")) { isTransitive = false }
+                shadowBundle(project(common.path, "transformProductionFabric")) { isTransitive = false }
             }
         }
 
-        node.project.extensions.configure<dev.kikugie.fletching_table.extension.FletchingTableExtension> {
-            j52j.register("main") {
-                extension("json", "assets/${mod.id}/**/*.json5")
-                extension("json", "data/${mod.id}/**/*.json5")
-            }
+        node.project.tasks.withType<ShadowJar> {
+            configurations = listOf(shadowBundle)
+            archiveClassifier = "dev-shadow"
+        }
+
+        node.project.tasks.withType<RemapJarTask> {
+            injectAccessWidener = true
+            input = node.project.tasks.shadowJar.get().archiveFile
+            archiveClassifier = null
+            dependsOn(node.project.tasks.shadowJar)
+        }
+
+        node.project.tasks.withType<Jar> {
+            archiveClassifier = "dev"
         }
 
         if (loader != "common") {
@@ -172,6 +200,8 @@ for (node in stonecutter.tree.nodes) {
                 }
             }
 
+            accessWidenerPath = rootProject.file("src/main/resources/${mod.id}.accesswidener")
+
             decompilers {
                 get("vineflower").apply { // Adds names to lambdas - useful for mixins
                     options.put("mark-corresponding-synthetics", "1")
@@ -183,7 +213,10 @@ for (node in stonecutter.tree.nodes) {
                 runDir = project.layout.projectDirectory.asFile.toPath().toAbsolutePath()
                     .relativize(rootProject.layout.projectDirectory.file("run").asFile.toPath())
                     .toString()
-                vmArgs("-Dmixin.debug.export=true")
+                vmArgs(
+                    "-Dmixin.debug.export=true",
+                    "-XX:+AllowEnhancedClassRedefinition"
+                )
             }
         }
     }
@@ -330,10 +363,17 @@ tasks.gitChangelog {
         }
 
         val original = changelogFile.readText()
-        val decoded = decodeHtmlNumericEntities(original)
+        var processed = decodeHtmlNumericEntities(original)
 
-        if (decoded != original) {
-            changelogFile.writeText(decoded)
+        processed = Regex("""(?<=- )(.*?)(?= \(\[)""").replace(processed) { match ->
+            match.value.replace(Regex("#(\\d+)")) { issueMatch ->
+                val issueNumber = issueMatch.groupValues[1]
+                "[#$issueNumber](https://github.com/${mod.prop("github")}/issues/$issueNumber)"
+            }
+        }
+
+        if (processed != original) {
+            changelogFile.writeText(processed)
         }
     }
 
