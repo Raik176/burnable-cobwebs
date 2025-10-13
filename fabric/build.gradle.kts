@@ -16,12 +16,6 @@ architectury {
     fabric()
 }
 
-fletchingTable {
-    fabric {
-        entrypointMappings.put("modmenu", "com.terraformersmc.modmenu.api.ModMenuApi")
-    }
-}
-
 dependencies {
     modImplementation("net.fabricmc:fabric-loader:${mod.dep("fabric_loader")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${common.mod.dep("fabric_api")}")

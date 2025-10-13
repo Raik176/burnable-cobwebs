@@ -22,6 +22,11 @@ repositories {
 
 dependencies {
     "forge"("net.minecraftforge:forge:$minecraft-${common.mod.dep("forge_loader")}")
+
+    "io.github.llamalad7:mixinextras-forge:${mod.dep("mixin_extras")}".let {
+        add("include", it)
+        add("implementation", it)
+    }
 }
 
 fun convertMinecraftTargets(): String {
